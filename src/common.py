@@ -20,12 +20,11 @@ def parse_proc_cgroup_file(pid):
             hierarchy_listing_split = hierarchy_listing.split(':')
             # In this case, I'm choosing to index the data by hierarchy name
             # This will make it easy to look through later
-            hierarchy_listing_dictionary['index'] = hierarchy_listing_split[0] 
-            hierarchy_listing_dictionary['directory'] = hierarchy_listing_split[2]
-            # TODO I need to figure out what this is really called
-            # Also this might have to go :(
-            hierarchy_name = hierarchy_listing_split[1] if hierarchy_listing_split[1] != '' else 'base'
-            hierarchy_name = hierarchy_name.split('=')[1] if '=' in hierarchy_name else hierarchy_name
-            spec[hierarchy_name] = hierarchy_listing_dictionary
+            if hierarchy_listing_split[0] != '0':
+                hierarchy_listing_dictionary['index'] = hierarchy_listing_split[0]
+                hierarchy_listing_dictionary['directory'] = hierarchy_listing_split[2]
+                hierarchy_name = hierarchy_listing_split[1]
+                hierarchy_name = hierarchy_name.split('=')[1] if '=' in hierarchy_name else hierarchy_name
+                spec[hierarchy_name] = hierarchy_listing_dictionary
         return spec
 
