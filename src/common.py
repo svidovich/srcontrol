@@ -28,3 +28,22 @@ def parse_proc_cgroup_file(pid):
                 spec[hierarchy_name] = hierarchy_listing_dictionary
         return spec
 
+# load_hierarchies
+# Inputs
+# dir: string
+# The top level cgroup directory
+#
+# Outputs
+# hierarchies: list
+# A list containing the available cgroup hierarchies
+#
+# If the cgroup top level is mounted somewhere other than
+# at /sys/fs/cgroup, it can be specified
+def load_hierarchies(dir='/sys/fs/cgroup'):
+    cgls = os.listdir(dir)
+    hierarchies = []
+    for probable_hierarchy in cgls:
+        full_hierarchy_path = os.path.join(dir, probable_hierarchy)
+        if os.path.isdir(full_hierarchy_path) and not os.path.islink(full_hierarchy_path):
+            hierarchies.append(probable_hierarchy)
+    return hierarchies
