@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 
+CGROUP_BASE_DIR = '/sys/fs/cgroup'
+
 # parse_proc_cgroup_file
 # Inputs
 # pid: int, str
@@ -39,7 +41,7 @@ def parse_proc_cgroup_file(pid):
 #
 # If the cgroup top level is mounted somewhere other than
 # at /sys/fs/cgroup, it can be specified
-def load_hierarchies(dir='/sys/fs/cgroup'):
+def load_hierarchies(dir=CGROUP_BASE_DIR):
     cgls = os.listdir(dir)
     hierarchies = []
     for probable_hierarchy in cgls:
@@ -47,3 +49,26 @@ def load_hierarchies(dir='/sys/fs/cgroup'):
         if os.path.isdir(full_hierarchy_path) and not os.path.islink(full_hierarchy_path):
             hierarchies.append(probable_hierarchy)
     return hierarchies
+
+# load_groups_and_files
+# Inputs
+# dir: string
+# The top level cgroup directory
+#
+# Outputs
+# groups_and_files: dict
+# A large dictionary containing every cgroup currently
+# on the system, its children, and all files in the group
+def load_groups_and_files(dir=CGROUP_BASE_DIR):
+    hierarchies = load_hierarchies()
+    groups_and_files = []
+    for hierarchy in hierarchies:
+        hierarchy_base_path = os.path.join(CGROUP_BASE_DIR, hierarchy)
+        for (root, dirs, files) in os.walk(hierarchy_base_path):
+            group_and_files = {}
+            group_and_files['group'] = root
+            group_and_files['subgroups'] = dirs if dirs else None
+            group_and_files['files'] = files if files else None
+            groups_and_files.append(group_and_files)
+
+    return groups_and_files
