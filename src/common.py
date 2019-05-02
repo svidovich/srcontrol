@@ -56,9 +56,10 @@ def load_hierarchies(dir=CGROUP_BASE_DIR):
 # The top level cgroup directory
 #
 # Outputs
-# groups_and_files: dict
-# A large dictionary containing every cgroup currently
-# on the system, its children, and all files in the group
+# groups_and_files: list
+# A large list containing dictionaries, themselves containing 
+# every cgroup currently on the system, its children, 
+# and all files in the groups.
 def load_groups_and_files(dir=CGROUP_BASE_DIR):
     hierarchies = load_hierarchies()
     groups_and_files = []
