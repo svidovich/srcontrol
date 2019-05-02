@@ -72,3 +72,29 @@ def load_groups_and_files(dir=CGROUP_BASE_DIR):
             groups_and_files.append(group_and_files)
 
     return groups_and_files
+
+# load_group_files
+# Inputs
+# dir: string
+# The top level cgroup directory
+# group_name: string
+# The name of the cgroup of interest.
+#
+# Outputs:
+# files: dict
+# A dictionary object whose keys are base hierarchies and
+# whose values are the files contained under the group.
+def load_group_files(dir=CGROUP_BASE_DIR, group_name=None):
+    if group_name is None:
+        raise ValueError('load_group_files: group_name not set.')
+    hierarchies = load_hierarchies()
+    group_files = {}
+    for hierarchy in hierarchies:
+        hierarchy_base_path = os.path.join(CGROUP_BASE_DIR, hierarchy)
+        for (root, dirs, files) in os.walk(hierarchy_base_path):
+            if group_name in dirs:
+                group_dir = os.path.join(root, group_name)
+                print(f'group_dir: {group_dir}')
+                files = [f for f in os.listdir(group_dir) if os.path.isfile(os.path.join(group_dir, f))]
+                group_files[hierarchy] = files
+    return group_files
