@@ -87,6 +87,8 @@ def load_groups_and_files(dir=CGROUP_BASE_DIR):
 def load_group_files(dir=CGROUP_BASE_DIR, group_name=None):
     if group_name is None:
         raise ValueError('load_group_files: group_name not set.')
+    if not isinstance(group_name, str):
+        raise TypeError('load_group_files: group_name should be a string.')
     hierarchies = load_hierarchies()
     group_files = {}
     for hierarchy in hierarchies:
