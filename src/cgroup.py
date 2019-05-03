@@ -32,7 +32,7 @@ class Cgroup(object):
                 raise ValueError(f'Chosen hierarchy {hierarchy} is not an available system CGROUP hierarchy.')
         # If we are not root we will not have permission to create a group
         if os.geteuid() != 0:
-            raise PrivilegeError(f'EUID is {os.geteuid()}. It must be 0: Elevate the privilege of the program to continue.')
+            raise PrivilegeError(f'EUID is nonzero. It must be 0: Elevate the privilege of the program to continue.')
         # Make the new cgroup under each desired hierarchy.
         # Group name can also be a path into an already extant subgroup.
         logger.info('Constructing CGROUPS')
@@ -41,33 +41,28 @@ class Cgroup(object):
             self.constructed_subgroups.append(new_cgroup)
             os.mkdir(new_cgroup)
     
-    def execute_function_in_cgroup(self, function=None, *args):
+    def execute_function_in_cgroup(self, *args, function=None):
+        # Get pid to avoid double execution
+        parent_pid = os.getpid()
         # Fork to a new process and get new pid
         os.fork()
         pid = os.getpid()
-        # Get the cgroup information for the new pid so that it can be returned later
-        spec = common.parse_proc_cgroup_file(pid)
-        # Add the process to the cgroup.procs file in each of the desired cgroups
-        common.add_process_to_cgroup(subgroups=self.constructed_subgroups, pid=pid)
-        # Execute the function under the cgroup and collect the return value
-        arguments = args
-        return_value = function(arguments)
-        # Put the process back to the cgroup it was originally contained in
-        common.return_process_to_original_cgroup(spec=spec, pid=pid)
-        # Exit the fork
-        sys.exit()
-        # Return the value obtained from executing the function
-        return return_value
+        if pid != parent_pid:
+            # Get the cgroup information for the new pid so that it can be returned later
+            spec = common.parse_proc_cgroup_file(pid)
+            # Add the process to the cgroup.procs file in each of the desired cgroups
+            common.add_process_to_cgroup(subgroups=self.constructed_subgroups, pid=pid)
+            # Execute the function under the cgroup and collect the return value
+            return_value = function(args) if args else function()
+            # Put the process back to the cgroup it was originally contained in
+            common.return_process_to_original_cgroup(spec=spec, pid=pid)
+            # Exit the fork
+            # sys.exit()
+            os._exit(0)
+            # Return the value obtained from executing the function
+            return return_value
 
-
-    # This lets us use a with cgroup.Cgroup(...) statement.
-    def __enter__(self):
-        return self
-
-    # This removes the cgroup on exit. Do we want this?
-    # Perhaps we could extend this class to a PersistentCgroup(Cgroup)
-    # without any exiting which could act as a 'daemon' of sorts.
-    def __exit__(self, exception_type, exception_value, traceback):
+    def cleanup(self):
         logger.info(f'Removing CGROUPS')
         for constructed_subgroup in self.constructed_subgroups:
             os.rmdir(constructed_subgroup)
