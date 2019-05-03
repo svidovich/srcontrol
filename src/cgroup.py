@@ -1,6 +1,7 @@
 import common
 import logging
 import os
+import sys
 
 # Instantiate logger
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname).8s] Function %(funcName).12s: %(message)s')
@@ -39,6 +40,25 @@ class Cgroup(object):
             new_cgroup = os.path.join(CGROUP_BASE_DIR, hierarchy, group_name)
             self.constructed_subgroups.append(new_cgroup)
             os.mkdir(new_cgroup)
+    
+    def execute_function_in_cgroup(self, function=None, *args):
+        # Fork to a new process and get new pid
+        os.fork()
+        pid = os.getpid()
+        # Get the cgroup information for the new pid so that it can be returned later
+        spec = common.parse_proc_cgroup_file(pid)
+        # Add the process to the cgroup.procs file in each of the desired cgroups
+        common.add_process_to_cgroup(subgroups=self.constructed_subgroups, pid=pid)
+        # Execute the function under the cgroup and collect the return value
+        arguments = args
+        return_value = function(arguments)
+        # Put the process back to the cgroup it was originally contained in
+        common.return_process_to_original_cgroup(spec=spec, pid=pid)
+        # Exit the fork
+        sys.exit()
+        # Return the value obtained from executing the function
+        return return_value
+
 
     # This lets us use a with cgroup.Cgroup(...) statement.
     def __enter__(self):

@@ -10,8 +10,10 @@ CGROUP_BASE_DIR = '/sys/fs/cgroup'
 #
 # Outputs
 # spec: dict
-# A nested dictionary, the first layer being the hierarchies the process belongs to
-def parse_proc_cgroup_file(pid):
+# A nested dictionary, the first layer being the hierarchies the process belongs to.
+def parse_proc_cgroup_file(pid=None):
+    if pid is None:
+        raise ValueError('Expected argument pid is None.')
     # If you don't have the /proc filesystem mounted you're a chump
     with open(f'/proc/{pid}/cgroup', 'r') as proc_cgroup_file:
         # This comes with newlines attached. Fix that in place.
@@ -29,6 +31,66 @@ def parse_proc_cgroup_file(pid):
                 hierarchy_name = hierarchy_name.split('=')[1] if '=' in hierarchy_name else hierarchy_name
                 spec[hierarchy_name] = hierarchy_listing_dictionary
         return spec
+
+# Could these next two functions be merged somehow?
+
+# return_process_to_original_cgroup
+# Inputs
+# spec: dict
+# The output of the function parse_proc_cgroup_file
+# pid: int ( Should this be changed to int, str? )
+# The pid of the process to be returned to its original group
+#
+# Ouputs
+# void
+#
+# This function will read the spec obtained from a process' /proc/pid/cgroup
+# file, and use that information to return it to its original group. This
+# function must be called after a fork occurs, but before an exit.
+def return_process_to_original_cgroup(dir=CGROUP_BASE_DIR, spec=None, pid=None):
+    # Make sure we have the data we need.
+    if spec is None:
+        raise ValueError('Expected argument spec is None. spec is the output of common.parse_proc_cgroup_file.')
+    if pid is None:
+        raise ValueError('Expected argument pid is None.')
+    if not isinstance(pid, int):
+        raise TypeError(f'Argument pid must be of type int; {type(pid)} was received.')
+    if not isinstance(spec, dict):
+        raise TypeError(f'Argument spec must be of type dict; {type(spec)} was received.')
+
+    for hierarchy, mount_data in spec.items():
+        mount_data['directory'] = mount_data['directory'].replace('/', '', 1)
+        original_cgroup_path = os.path.join(dir, hierarchy, mount_data['directory'])
+        original_cgroup_procs_file = os.path.join(original_cgroup_path, 'cgroup.procs')
+        with open(original_cgroup_procs_file, 'a') as cgprocs:
+            cgprocs.write(str(pid))
+
+# add_process_to_cgroup
+# Inputs
+# subgroups: list
+# subgroups is a list of strings containing absolute paths to the subgroups
+# to which a process is to be added. An example could be
+# ['/sys/fs/cgroup/memory/user.slice', '/sys/fs/cgroup/cpu,cpuacct']
+# pid: string, int
+# The pid of the process to be added to the subgroups in subgroups
+# dir: string
+# The top level cgroup directory
+#
+# Outputs
+# void
+def add_process_to_cgroup(dir=CGROUP_BASE_DIR, subgroups=None, pid=None):
+    if subgroups is None:
+        raise ValueError('Expected argument subgroups is None.')
+    if pid is None:
+        raise ValueError('Expected argument pid is None.')
+    for subgroup in subgroups:
+        if not dir in subgroup:
+            raise ValueError(f'Subgroup {subgroup} is not an absolute path to a valid cgroup location.')
+    for subgroup in subgroups:
+        # We assume that these are absolute paths.
+        subgroup_procs_file = os.path.join(subgroup, 'cgroup.procs')
+        with open(subgroup_procs_file, 'a') as procs_file:
+            procs_file.write(str(pid))
 
 # load_hierarchies
 # Inputs
