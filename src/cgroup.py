@@ -1,10 +1,11 @@
-import atext
 import common
 import logging
 import os
 
 # Instantiate logger
-logger = logging.getLogger()
+logging.basicConfig(level=logging.DEBUG, format='[%(levelname).8s] Function %(funcName).12s: %(message)s')
+logger = logging.getLogger(__name__)
+# logger.setLevel(level=logging.INFO)
 
 CGROUP_BASE_DIR = '/sys/fs/cgroup'
 
@@ -15,6 +16,7 @@ CGROUP_BASE_DIR = '/sys/fs/cgroup'
 # TODO: Define function that allows us to add a routine to a
 # cgroup.
 class Cgroup(object):
+    constructed_subgroups = []
     def __init__(self, group_name=None, hierarchies=None):
         possible_hierarchies = common.load_hierarchies()
         # If there is no group name, we cannot create a group
@@ -32,26 +34,23 @@ class Cgroup(object):
             raise PrivilegeError(f'EUID is {os.geteuid()}. It must be 0: Elevate the privilege of the program to continue.')
         # Make the new cgroup under each desired hierarchy.
         # Group name can also be a path into an already extant subgroup.
-        constructed_subgroups = []
+        logger.info('Constructing CGROUPS')
         for hierarchy in hierarchies:
             new_cgroup = os.path.join(CGROUP_BASE_DIR, hierarchy, group_name)
-            constructed_subgroups.append(new_cgroup)
+            self.constructed_subgroups.append(new_cgroup)
             os.mkdir(new_cgroup)
 
-        # We do not have to do a with cgroup.Cgroup(...) statement:
-        # this line will automatically run the exit routine.
-        atext.register(self.__exit__)
+    # This lets us use a with cgroup.Cgroup(...) statement.
+    def __enter__(self):
+        return self
 
-        # This lets us use a with cgroup.Cgroup(...) statement.
-        def __enter__(self):
-            return self
-
-        # This removes the cgroup on exit. Do we want this?
-        # Perhaps we could extend this class to a PersistentCgroup(Cgroup)
-        # without any exiting which could act as a 'daemon' of sorts.
-        def __exit__(self):
-            for constructed_subgroup in constructed_subgroups:
-                os.rmdir(constructed_subgroup)
+    # This removes the cgroup on exit. Do we want this?
+    # Perhaps we could extend this class to a PersistentCgroup(Cgroup)
+    # without any exiting which could act as a 'daemon' of sorts.
+    def __exit__(self, exception_type, exception_value, traceback):
+        logger.info(f'Removing CGROUPS')
+        for constructed_subgroup in self.constructed_subgroups:
+            os.rmdir(constructed_subgroup)
 
 
 class PrivilegeError(Exception):
