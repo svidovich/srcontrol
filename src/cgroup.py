@@ -47,6 +47,8 @@ class Cgroup(object):
         # Fork to a new process and get new pid
         os.fork()
         pid = os.getpid()
+        return_value = None
+        # os.wait()
         if pid != parent_pid:
             # Get the cgroup information for the new pid so that it can be returned later
             spec = common.parse_proc_cgroup_file(pid)
@@ -56,11 +58,13 @@ class Cgroup(object):
             return_value = function(args) if args else function()
             # Put the process back to the cgroup it was originally contained in
             common.return_process_to_original_cgroup(spec=spec, pid=pid)
-            # Exit the fork
+            # Exit the fork.
+            # Q: HOW DO I EXIT THE FORK BUT ALSO RETURN.
             # sys.exit()
-            os._exit(0)
+            # os._exit(0)
             # Return the value obtained from executing the function
             return return_value
+        os.wait()
 
     def cleanup(self):
         logger.info(f'Removing CGROUPS')
