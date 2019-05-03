@@ -1,10 +1,30 @@
 #!/usr/bin/env python3
 import common
+import cgroup
 import unittest
 from unittest import mock
 from pprint import pprint
 
 # TODO: Implement testing with an actual fucking testing library
+
+
+class TestCgroup(unittest.TestCase):
+    # Test case: group_name is None.
+    def test_without_group_name(self):
+        with self.assertRaises(ValueError):
+            # Since we don't care about a return value, use
+            # a blank instead.
+            _ = cgroup.Cgroup(hierarchies=['memory'])
+
+    # Test case: hierarchy is not valid.
+    def test_with_bad_hierarchy(self):
+        with self.assertRaises(ValueError):
+            _ = cgroup.Cgroup(group_name='new_group', hierarchies=['memory', 'fake-hierarchy'])
+
+    # Test case: script has nonzero euid.
+    def test_as_nonroot(self):
+        with self.assertRaises(cgroup.PrivilegeError):
+            _ = cgroup.Cgroup(group_name='new_group', hierarchies=['memory', 'cpu,cpuacct'])
 
 # I wonder how easy it will be to make this pass on
 # any given machine -- how will different machines
