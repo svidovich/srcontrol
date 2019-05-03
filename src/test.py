@@ -54,14 +54,12 @@ class TestCommonFunctions(unittest.TestCase):
     # print('Sample group files data:')
     # pprint(gf)
 
-    # # Raise ValueError
-    # try:
-    #     gf = common.load_group_files()
-    # except Exception as e:
-    #     print(e)
+    # Test case: No group_name given
+    def test_load_group_files_no_group(self):
+        with self.assertRaises(ValueError):
+            _ = common.load_group_files()
 
-    # # Raise TypeError
-    # try:
-    #     gf = common.load_group_files(group_name=5)
-    # except Exception as e:
-    #     print(e)
+    # Test case: Bad typing in group name
+    def test_load_group_files_bad_group(self):
+        with self.assertRaises(TypeError):
+            _ = common.load_group_files(group_name=5)
