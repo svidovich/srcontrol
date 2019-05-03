@@ -61,10 +61,10 @@ class Cgroup(object):
             # Exit the fork.
             # Q: HOW DO I EXIT THE FORK BUT ALSO RETURN.
             # sys.exit()
-            # os._exit(0)
+            os._exit(0)
             # Return the value obtained from executing the function
-            return return_value
         os.wait()
+        return return_value
 
     def cleanup(self):
         logger.info(f'Removing CGROUPS')
