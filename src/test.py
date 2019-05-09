@@ -34,8 +34,8 @@ class TestCommonFunctions(unittest.TestCase):
     ###### Tests for load_hierarchies
     def test_load_hierarchies(self):
         h = common.load_hierarchies()
-        hierarchies_test_data = ['hugetlb', 'cpuset', 'perf_event', 'memory', 'devices', 'net_cls,net_prio', 'blkio', 'pids', 'freezer', 'cpu,cpuacct', 'rdma', 'systemd', 'unified']
-        self.assertEqual(h, hierarchies_test_data)
+        hierarchies_test_data = ['hugetlb', 'cpuset', 'perf_event', 'memory', 'devices', 'net_cls,net_prio', 'blkio', 'pids', 'freezer', 'cpu,cpuacct', 'rdma', 'systemd', 'unified'].sort()
+        self.assertEqual(h.sort(), hierarchies_test_data)
 
     ###### Tests for load_groups_and_files
     @mock.patch('common.load_hierarchies')
