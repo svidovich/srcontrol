@@ -2,6 +2,7 @@ import common
 import logging
 import os
 import sys
+from metric import metric
 
 # Instantiate logger
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname).8s] Function %(funcName).12s: %(message)s')
@@ -17,8 +18,13 @@ CGROUP_BASE_DIR = '/sys/fs/cgroup'
 # TODO: Define function that allows us to add a routine to a
 # cgroup.
 class Cgroup(object):
-    constructed_subgroups = []
     def __init__(self, group_name=None, hierarchies=None):
+        self.hierarchies = hierarchies
+        self.constructed_subgroups = []
+        if group_name is None:
+            raise ValueError('__init__: Expected value group_name is None.')
+        if hierarchies is None:
+            raise ValueError('__init__: Expected value hierarchies is None.')
         possible_hierarchies = common.load_hierarchies()
         # If there is no group name, we cannot create a group
         if group_name is None:
@@ -42,6 +48,8 @@ class Cgroup(object):
             os.mkdir(new_cgroup)
     
     def execute_function_in_cgroup(self, *args, function=None):
+        if function is None:
+            raise ValueError('execute_function_in_cgroup: Expected argument function is None.')
         # Get pid to avoid double execution
         parent_pid = os.getpid()
         # Fork to a new process and get new pid
@@ -66,6 +74,21 @@ class Cgroup(object):
         os.wait()
         return return_value
 
+    # Don't get excited yet. This is just the header. I need to figure out how I want to do
+    # the retry logic before I flesh this out.
+    def execute_auto_restarting_function_in_cgroup(self, *args, function=None, retries=0):
+        # Retry is based on whether or not I detect that a process was killed due to an OOM error.
+        # As such, I need to be able to detect OOM errors.
+        # Maybe this will change. ( Reading exit codes? )
+        # https://stonesoupprogramming.com/2017/09/07/python-fork-exit-status/
+        # I would like to be able to reprovision a function with more memory where possible
+        # if it is truly killed due to ENOMEM. Thus, I will still probably need this even if I do
+        # make it so that exit codes are read to see if the child succeeded or not.
+        if not any('memory' in hierarchy for hierarchy in self.hierarchies):
+            raise NotSupportedError('Auto restart is only supported for CGROUPS with the \'memory\' hierarchy.')
+        if retries == 0:
+            logger.warn('Using auto restarting function with 0 retries.')
+
     def cleanup(self):
         logger.info(f'Removing CGROUPS')
         for constructed_subgroup in self.constructed_subgroups:
@@ -73,5 +96,9 @@ class Cgroup(object):
 
 
 class PrivilegeError(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+class NotSupportedError(Exception):
     def __init__(self, message):
         super().__init__(message)
