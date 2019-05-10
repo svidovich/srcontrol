@@ -13,6 +13,7 @@
 #
 # And chain types, which are a whole fucked up mess of their own
 # TODO: Add chain types parser once I find a chain type metric
+# TODO: Autodetection of metric types.
 
 import os
 

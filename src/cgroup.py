@@ -4,6 +4,8 @@ import os
 import sys
 from metric import metric
 
+# TODO: UNIT TESTS DAMMIT
+
 # Instantiate logger
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname).8s] Function %(funcName).12s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -44,8 +46,11 @@ class Cgroup(object):
         logger.info('Constructing CGROUPS')
         for hierarchy in hierarchies:
             new_cgroup = os.path.join(CGROUP_BASE_DIR, hierarchy, group_name)
-            self.constructed_subgroups.append(new_cgroup)
-            os.mkdir(new_cgroup)
+            try:
+                os.mkdir(new_cgroup)
+                self.constructed_subgroups.append(new_cgroup)
+            except Exception:
+                raise
     
     def execute_function_in_cgroup(self, *args, function=None):
         if function is None:
@@ -89,10 +94,33 @@ class Cgroup(object):
         if retries == 0:
             logger.warn('Using auto restarting function with 0 retries.')
 
+    def read_group_metric(self, constructed_subgroup=None, metric_name=None, metric_type=None):
+        metric_types = ['key_value', 'multiline', 'chain']
+        if constructed_subgroup is None:
+            raise ValueError('read_group_metric: Expected value hierarchy is None.')
+        if constructed_subgroup not in self.constructed_subgroups:
+            raise ValueError('read_group_metric: Selected subgroup not in available subgroups.')
+        if metric_name is None:
+            raise ValueError('read_group_metric: Expected value metric_name is None.')
+        if metric_type not in metric_types:
+            raise ValueError('read_group_metric: Invalid metric type. Valid types are key_value, multiline and chain.')
+
+        # TODO: Do this better. Strings are dumb. Flags of some kind?
+        # TODO: Autodetection. This should happen in metric.py.
+        if metric_type == 'key_value':
+            return metric.parse_metric_key_value(cgroup_path=constructed_subgroup, metric_name=metric_name)
+        if metric_type == 'multiline':
+            return metric.parse_metric_pairs(cgroup_path=constructed_subgroup, metric_name=metric_name)
+        if metric_type == 'chain':
+            raise NotImplementedError
+
     def cleanup(self):
         logger.info(f'Removing CGROUPS')
         for constructed_subgroup in self.constructed_subgroups:
-            os.rmdir(constructed_subgroup)
+            try:
+                os.rmdir(constructed_subgroup)
+            except Exception:
+                raise
 
 
 class PrivilegeError(Exception):
