@@ -81,3 +81,14 @@ def parse_metric_pairs(cgroup_path=None, metric_name=None):
             metric_value = metric_key_value_list[1].strip()
             metric_dictionary[metric_key] = metric_value
     return metric_dictionary
+
+
+def detect_metric_type(file_handle):
+    lines = [line.strip() for line in file_handle.readlines()]
+    if len(lines) == 1:
+        return 'key_value'
+    if len(lines) > 1:
+        if not any(len(line.split()) > 2 for line in lines):
+            return 'multiline'
+        else:
+            return 'chain'

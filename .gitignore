@@ -104,4 +104,4 @@ venv.bak/
 .mypy_cache/
 
 # Other
-roughtesting.py
+roughtest.py
