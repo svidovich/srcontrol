@@ -73,6 +73,9 @@ class Cgroup(object):
             common.return_process_to_original_cgroup(spec=spec, pid=pid)
             # Exit the fork.
             # Q: HOW DO I EXIT THE FORK BUT ALSO RETURN.
+            # A: Nate says that since I am forking, I am going to execute a function
+            # in an entirely new execution context. As luck would hold, Python 3.7
+            # supports passing execution contexts. I need to research this.
             # sys.exit()
             os._exit(0)
             # Return the value obtained from executing the function
