@@ -105,14 +105,14 @@ class Cgroup(object):
         if metric_type not in metric_types:
             raise ValueError('read_group_metric: Invalid metric type. Valid types are key_value, multiline and chain.')
 
-        # TODO: Do this better. Strings are dumb. Flags of some kind?
-        # TODO: Autodetection. This should happen in metric.py.
-        if metric_type == 'key_value':
-            return metric.parse_metric_key_value(cgroup_path=constructed_subgroup, metric_name=metric_name)
-        if metric_type == 'multiline':
-            return metric.parse_metric_pairs(cgroup_path=constructed_subgroup, metric_name=metric_name)
-        if metric_type == 'chain':
-            raise NotImplementedError
+        with open(os.path.join(constructed_subgroup, metric_name), 'r') as file_handle:
+            metric_type = metric.detect_metric_type(file_handle)
+            if metric_type == 'key_value':
+                return metric.parse_metric_key_value(cgroup_path=constructed_subgroup, metric_name=metric_name)
+            if metric_type == 'multiline':
+                return metric.parse_metric_pairs(cgroup_path=constructed_subgroup, metric_name=metric_name)
+            if metric_type == 'chain':
+                raise NotImplementedError
 
     def cleanup(self):
         logger.info(f'Removing CGROUPS')

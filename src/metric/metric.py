@@ -82,13 +82,24 @@ def parse_metric_pairs(cgroup_path=None, metric_name=None):
             metric_dictionary[metric_key] = metric_value
     return metric_dictionary
 
+# detect_metric_type
+# Inputs
+# file_handle: file object
+# The file handle for the cgroup metric file. Accessed by using with open...
+#
+# Outputs
+# metric_type: str
+# The metric group to which the cgroup metric of interest belongs to
 
 def detect_metric_type(file_handle):
     lines = [line.strip() for line in file_handle.readlines()]
     if len(lines) == 1:
-        return 'key_value'
+        metric_type = 'key_value'
+        return metric_type
     if len(lines) > 1:
         if not any(len(line.split()) > 2 for line in lines):
-            return 'multiline'
+            metric_type = 'multiline'
+            return metric_type
         else:
-            return 'chain'
+            metric_type = 'chain'
+            return metric_type
