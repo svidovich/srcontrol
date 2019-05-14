@@ -94,7 +94,7 @@ class Cgroup(object):
         if retries == 0:
             logger.warn('Using auto restarting function with 0 retries.')
 
-    def read_group_metric(self, constructed_subgroup=None, metric_name=None, metric_type=None):
+    def read_group_metric(self, constructed_subgroup=None, metric_name=None):
         metric_types = ['key_value', 'multiline', 'chain']
         if constructed_subgroup is None:
             raise ValueError('read_group_metric: Expected value hierarchy is None.')
@@ -102,8 +102,6 @@ class Cgroup(object):
             raise ValueError('read_group_metric: Selected subgroup not in available subgroups.')
         if metric_name is None:
             raise ValueError('read_group_metric: Expected value metric_name is None.')
-        if metric_type not in metric_types:
-            raise ValueError('read_group_metric: Invalid metric type. Valid types are key_value, multiline and chain.')
 
         with open(os.path.join(constructed_subgroup, metric_name), 'r') as file_handle:
             metric_type = metric.detect_metric_type(file_handle)
