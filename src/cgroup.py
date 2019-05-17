@@ -116,9 +116,8 @@ class Cgroup(object):
                 'read_group_metric: Selected subgroup not in available subgroups.'
             )
 
-        # yapf: disable
-        with open(os.path.join(constructed_subgroup, metric_name), 'r') as file_handle:
-            #yapf: enable
+        with open(os.path.join(constructed_subgroup, metric_name),
+                  'r') as file_handle:
             metric_type = metric.detect_metric_type(file_handle)
             if metric_type == 'key_value':
                 return metric.parse_metric_key_value(
