@@ -12,9 +12,7 @@ CGROUP_BASE_DIR = '/sys/fs/cgroup'
 # Outputs
 # spec: dict
 # A nested dictionary, the first layer being the hierarchies the process belongs to.
-def parse_proc_cgroup_file(pid=None):
-    if pid is None:
-        raise ValueError('Expected argument pid is None.')
+def parse_proc_cgroup_file(pid):
     # If you don't have the /proc filesystem mounted you're a chump
     with open(f'/proc/{pid}/cgroup', 'r') as proc_cgroup_file:
         # This comes with newlines attached. Fix that in place.
