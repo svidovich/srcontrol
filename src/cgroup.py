@@ -81,12 +81,41 @@ class Cgroup(object):
 
     # This wrapper is necessary to apply a queue to a function which
     # does not normally take one.
-    def wrapper(function, queue, *args):
+    def wrapper(self, function, queue, *args):
+        process_pid = os.getpid()
+        spec = common.parse_proc_cgroup_file(process_pid)
+        # Add process to desired cgroup
+        common.add_process_to_cgroup(subgroups=self.constructed_subgroups,
+                                     pid=process_pid)
+        # queue.put(wrapper_pid)
         return_value = function(args)
         queue.put(return_value)
+        # Return the process to its original cgroup
+        common.return_process_to_original_cgroup(spec=spec, pid=process_pid)
 
     def execute_function_in_cgroup(self, function, *args):
-        pass
+
+        # This block handles the execution of the function
+        queue = multiprocessing.Queue()
+        # Invoke the wrapper. The wrapper will execute the desired function
+        # in a new process, placing its return value onto a queue which will
+        # return to the parent
+        process = multiprocessing.Process(target=self.wrapper,
+                                          args=(function, queue, args))
+        # Start the process
+        process.start()
+
+        # Get the return value
+        return_value = None
+        while True:
+            return_value = queue.get()
+            if return_value is not None:
+                break
+
+        # End the process
+        process.join()
+
+        return return_value
 
     # Don't get excited yet. This is just the header. I need to figure out how I want to do
     # the retry logic before I flesh this out.
