@@ -3,6 +3,7 @@ import os
 
 CGROUP_BASE_DIR = '/sys/fs/cgroup'
 
+
 # parse_proc_cgroup_file
 # Inputs
 # pid: int, str
@@ -25,14 +26,19 @@ def parse_proc_cgroup_file(pid=None):
             # In this case, I'm choosing to index the data by hierarchy name
             # This will make it easy to look through later
             if hierarchy_listing_split[0] != '0':
-                hierarchy_listing_dictionary['index'] = hierarchy_listing_split[0]
-                hierarchy_listing_dictionary['directory'] = hierarchy_listing_split[2]
+                hierarchy_listing_dictionary[
+                    'index'] = hierarchy_listing_split[0]
+                hierarchy_listing_dictionary[
+                    'directory'] = hierarchy_listing_split[2]
                 hierarchy_name = hierarchy_listing_split[1]
-                hierarchy_name = hierarchy_name.split('=')[1] if '=' in hierarchy_name else hierarchy_name
+                hierarchy_name = hierarchy_name.split(
+                    '=')[1] if '=' in hierarchy_name else hierarchy_name
                 spec[hierarchy_name] = hierarchy_listing_dictionary
         return spec
 
+
 # Could these next two functions be merged somehow?
+
 
 # return_process_to_original_cgroup
 # Inputs
@@ -47,23 +53,24 @@ def parse_proc_cgroup_file(pid=None):
 # This function will read the spec obtained from a process' /proc/pid/cgroup
 # file, and use that information to return it to its original group. This
 # function must be called after a fork occurs, but before an exit.
-def return_process_to_original_cgroup(dir=CGROUP_BASE_DIR, spec=None, pid=None):
+def return_process_to_original_cgroup(spec, pid, dir=CGROUP_BASE_DIR):
     # Make sure we have the data we need.
-    if spec is None:
-        raise ValueError('Expected argument spec is None. spec is the output of common.parse_proc_cgroup_file.')
-    if pid is None:
-        raise ValueError('Expected argument pid is None.')
     if not isinstance(pid, int):
-        raise TypeError(f'Argument pid must be of type int; {type(pid)} was received.')
+        raise TypeError(
+            f'Argument pid must be of type int; {type(pid)} was received.')
     if not isinstance(spec, dict):
-        raise TypeError(f'Argument spec must be of type dict; {type(spec)} was received.')
+        raise TypeError(
+            f'Argument spec must be of type dict; {type(spec)} was received.')
 
     for hierarchy, mount_data in spec.items():
         mount_data['directory'] = mount_data['directory'].replace('/', '', 1)
-        original_cgroup_path = os.path.join(dir, hierarchy, mount_data['directory'])
-        original_cgroup_procs_file = os.path.join(original_cgroup_path, 'cgroup.procs')
+        original_cgroup_path = os.path.join(dir, hierarchy,
+                                            mount_data['directory'])
+        original_cgroup_procs_file = os.path.join(original_cgroup_path,
+                                                  'cgroup.procs')
         with open(original_cgroup_procs_file, 'a') as cgprocs:
             cgprocs.write(str(pid))
+
 
 # add_process_to_cgroup
 # Inputs
@@ -78,19 +85,19 @@ def return_process_to_original_cgroup(dir=CGROUP_BASE_DIR, spec=None, pid=None):
 #
 # Outputs
 # void
-def add_process_to_cgroup(dir=CGROUP_BASE_DIR, subgroups=None, pid=None):
-    if subgroups is None:
-        raise ValueError('Expected argument subgroups is None.')
-    if pid is None:
-        raise ValueError('Expected argument pid is None.')
+def add_process_to_cgroup(subgroups, pid, dir=CGROUP_BASE_DIR):
+
     for subgroup in subgroups:
         if not dir in subgroup:
-            raise ValueError(f'Subgroup {subgroup} is not an absolute path to a valid cgroup location.')
+            raise ValueError(
+                f'Subgroup {subgroup} is not an absolute path to a valid cgroup location.'
+            )
     for subgroup in subgroups:
         # We assume that these are absolute paths.
         subgroup_procs_file = os.path.join(subgroup, 'cgroup.procs')
         with open(subgroup_procs_file, 'a') as procs_file:
             procs_file.write(str(pid))
+
 
 # load_hierarchies
 # Inputs
@@ -108,9 +115,11 @@ def load_hierarchies(dir=CGROUP_BASE_DIR):
     hierarchies = []
     for probable_hierarchy in cgls:
         full_hierarchy_path = os.path.join(dir, probable_hierarchy)
-        if os.path.isdir(full_hierarchy_path) and not os.path.islink(full_hierarchy_path):
+        if os.path.isdir(full_hierarchy_path
+                         ) and not os.path.islink(full_hierarchy_path):
             hierarchies.append(probable_hierarchy)
     return hierarchies
+
 
 # load_groups_and_files
 # Inputs
@@ -119,8 +128,8 @@ def load_hierarchies(dir=CGROUP_BASE_DIR):
 #
 # Outputs
 # groups_and_files: list
-# A large list containing dictionaries, themselves containing 
-# every cgroup currently on the system, its children, 
+# A large list containing dictionaries, themselves containing
+# every cgroup currently on the system, its children,
 # and all files in the groups.
 def load_groups_and_files(dir=CGROUP_BASE_DIR):
     hierarchies = load_hierarchies()
@@ -136,6 +145,7 @@ def load_groups_and_files(dir=CGROUP_BASE_DIR):
 
     return groups_and_files
 
+
 # load_group_files
 # Inputs
 # dir: string
@@ -147,9 +157,7 @@ def load_groups_and_files(dir=CGROUP_BASE_DIR):
 # files: dict
 # A dictionary object whose keys are base hierarchies and
 # whose values are the files contained under the group.
-def load_group_files(dir=CGROUP_BASE_DIR, group_name=None):
-    if group_name is None:
-        raise ValueError('load_group_files: group_name not set.')
+def load_group_files(group_name, dir=CGROUP_BASE_DIR):
     if not isinstance(group_name, str):
         raise TypeError('load_group_files: group_name should be a string.')
     hierarchies = load_hierarchies()
@@ -160,6 +168,9 @@ def load_group_files(dir=CGROUP_BASE_DIR, group_name=None):
             if group_name in dirs:
                 group_dir = os.path.join(root, group_name)
                 print(f'group_dir: {group_dir}')
-                files = [f for f in os.listdir(group_dir) if os.path.isfile(os.path.join(group_dir, f))]
+                files = [
+                    f for f in os.listdir(group_dir)
+                    if os.path.isfile(os.path.join(group_dir, f))
+                ]
                 group_files[hierarchy] = files
     return group_files

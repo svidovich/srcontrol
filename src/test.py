@@ -9,22 +9,19 @@ from pprint import pprint
 
 
 class TestCgroup(unittest.TestCase):
-    # Test case: group_name is None.
-    def test_without_group_name(self):
-        with self.assertRaises(ValueError):
-            # Since we don't care about a return value, use
-            # a blank instead.
-            _ = cgroup.Cgroup(hierarchies=['memory'])
 
     # Test case: hierarchy is not valid.
     def test_with_bad_hierarchy(self):
         with self.assertRaises(ValueError):
-            _ = cgroup.Cgroup(group_name='new_group', hierarchies=['memory', 'fake-hierarchy'])
+            _ = cgroup.Cgroup(group_name='new_group',
+                              hierarchies=['memory', 'fake-hierarchy'])
 
     # Test case: script has nonzero euid.
     def test_as_nonroot(self):
         with self.assertRaises(cgroup.PrivilegeError):
-            _ = cgroup.Cgroup(group_name='new_group', hierarchies=['memory', 'cpu,cpuacct'])
+            _ = cgroup.Cgroup(group_name='new_group',
+                              hierarchies=['memory', 'cpu,cpuacct'])
+
 
 # I wonder how easy it will be to make this pass on
 # any given machine -- how will different machines
@@ -34,7 +31,11 @@ class TestCommonFunctions(unittest.TestCase):
     ###### Tests for load_hierarchies
     def test_load_hierarchies(self):
         h = common.load_hierarchies()
-        hierarchies_test_data = ['hugetlb', 'cpuset', 'perf_event', 'memory', 'devices', 'net_cls,net_prio', 'blkio', 'pids', 'freezer', 'cpu,cpuacct', 'rdma', 'systemd', 'unified'].sort()
+        hierarchies_test_data = [
+            'hugetlb', 'cpuset', 'perf_event', 'memory', 'devices',
+            'net_cls,net_prio', 'blkio', 'pids', 'freezer', 'cpu,cpuacct',
+            'rdma', 'systemd', 'unified'
+        ].sort()
         self.assertEqual(h.sort(), hierarchies_test_data)
 
     ###### Tests for load_groups_and_files
@@ -44,7 +45,6 @@ class TestCommonFunctions(unittest.TestCase):
         lh_mock.assert_called_once()
         self.assertIsInstance(gsf, list)
 
-
     ###### Tests for load_group_files
 
     # This will require more instrumentation as
@@ -53,11 +53,6 @@ class TestCommonFunctions(unittest.TestCase):
     # gf = common.load_group_files(group_name='test_group')
     # print('Sample group files data:')
     # pprint(gf)
-
-    # Test case: No group_name given
-    def test_load_group_files_no_group(self):
-        with self.assertRaises(ValueError):
-            _ = common.load_group_files()
 
     # Test case: Bad typing in group name
     def test_load_group_files_bad_group(self):
