@@ -52,33 +52,6 @@ class Cgroup(object):
             except Exception:
                 raise
 
-    # Nate has recommended that we use multiprocessing for this, and hide the queue
-    # inside of the function away from the developer. This is a good idea.
-    def execute_function_in_cgroup_old(self, function, *args):
-
-        # Get pid to avoid double execution
-        parent_pid = os.getpid()
-        # Fork to a new process and get new pid
-        os.fork()
-        pid = os.getpid()
-        return_value = None
-
-        if pid != parent_pid:
-            # Get the cgroup information for the new pid so that it can be returned later
-            spec = common.parse_proc_cgroup_file(pid)
-            # Add the process to the cgroup.procs file in each of the desired cgroups
-            common.add_process_to_cgroup(subgroups=self.constructed_subgroups,
-                                         pid=pid)
-            # Execute the function under the cgroup and collect the return value
-            return_value = function(args) if args else function()
-            # Put the process back to the cgroup it was originally contained in
-            common.return_process_to_original_cgroup(spec=spec, pid=pid)
-
-            os._exit(0)
-            # Return the value obtained from executing the function
-        os.wait()
-        return return_value
-
     # This wrapper is necessary to apply a queue to a function which
     # does not normally take one.
     def wrapper(self, function, queue, *args):
@@ -105,7 +78,7 @@ class Cgroup(object):
         # Start the process
         process.start()
 
-        # Get the return value
+        # Get the return value. Use a spinlock to wait.
         return_value = None
         while True:
             return_value = queue.get()
