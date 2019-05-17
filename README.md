@@ -14,5 +14,5 @@ TODOS:
 * React to metrics intelligently
 
 Requires:
-* Python 3.6+
+* Python 3.7+
 * CGroups V2 ( And so, privilege )

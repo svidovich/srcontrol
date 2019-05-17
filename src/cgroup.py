@@ -1,7 +1,9 @@
 import common
 import logging
+import multiprocessing
 import os
 import sys
+
 from metric import metric
 
 # TODO: UNIT TESTS DAMMIT
@@ -52,11 +54,8 @@ class Cgroup(object):
 
     # Nate has recommended that we use multiprocessing for this, and hide the queue
     # inside of the function away from the developer. This is a good idea.
-    def execute_function_in_cgroup(self, *args, function=None):
-        if function is None:
-            raise ValueError(
-                'execute_function_in_cgroup: Expected argument function is None.'
-            )
+    def execute_function_in_cgroup_old(self, function, *args):
+
         # Get pid to avoid double execution
         parent_pid = os.getpid()
         # Fork to a new process and get new pid
@@ -79,6 +78,15 @@ class Cgroup(object):
             # Return the value obtained from executing the function
         os.wait()
         return return_value
+
+    # This wrapper is necessary to apply a queue to a function which
+    # does not normally take one.
+    def wrapper(function, queue, *args):
+        return_value = function(args)
+        queue.put(return_value)
+
+    def execute_function_in_cgroup(self, function, *args):
+        pass
 
     # Don't get excited yet. This is just the header. I need to figure out how I want to do
     # the retry logic before I flesh this out.
