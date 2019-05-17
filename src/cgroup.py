@@ -101,7 +101,6 @@ class Cgroup(object):
             logger.warn('Using auto restarting function with 0 retries.')
 
     def read_group_metric(self, constructed_subgroup, metric_name):
-        metric_types = ['key_value', 'multiline', 'chain']
         if constructed_subgroup not in self.constructed_subgroups:
             raise ValueError(
                 'read_group_metric: Selected subgroup not in available subgroups.'

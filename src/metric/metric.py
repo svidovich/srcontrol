@@ -32,19 +32,17 @@ CGROUP_BASE_DIR = '/sys/fs/cgroup'
 # files may contain strings OR ints OR floats. As such, the developer MUST
 # cast them as such after return.
 #
-# This function is used to parse those files for which the filename is the 
+# This function is used to parse those files for which the filename is the
 # key representing the metric, and the contents the value of the metric.
 
-def parse_metric_key_value(cgroup_path=None, metric_name=None):
-    if cgroup_path is None:
-        raise ValueError('parse_metric_key_value: Expected input cgroup path is None.')
-    if metric_name is None:
-        raise ValueError('parse_metric_key_value: Expected input metric_name is None.')
+
+def parse_metric_key_value(cgroup_path, metric_name):
     metric_file_path = os.path.join(cgroup_path, metric_name)
     with open(metric_file_path, 'r') as metric_file:
         # Strip, otherwise we may receive a newline
         metric_value = metric_file.read().strip()
         return metric_value
+
 
 # parse_metric_pairs
 # Inputs
@@ -62,11 +60,8 @@ def parse_metric_key_value(cgroup_path=None, metric_name=None):
 # the overall metric, but the contents are several key-value pairs representative
 # of the various parts of the overall metric.
 
-def parse_metric_pairs(cgroup_path=None, metric_name=None):
-    if cgroup_path is None:
-        raise ValueError('parse_metric_key_value: Expected input cgroup path is None.')
-    if metric_name is None:
-        raise ValueError('parse_metric_key_value: Expected input metric_name is None.')
+
+def parse_metric_pairs(cgroup_path, metric_name):
     metric_dictionary = {}
     metric_file_path = os.path.join(cgroup_path, metric_name)
     with open(metric_file_path, 'r') as metric_file:
@@ -82,6 +77,7 @@ def parse_metric_pairs(cgroup_path=None, metric_name=None):
             metric_dictionary[metric_key] = metric_value
     return metric_dictionary
 
+
 # detect_metric_type
 # Inputs
 # file_handle: file object
@@ -90,6 +86,7 @@ def parse_metric_pairs(cgroup_path=None, metric_name=None):
 # Outputs
 # metric_type: str
 # The metric group to which the cgroup metric of interest belongs to
+
 
 def detect_metric_type(file_handle):
     lines = [line.strip() for line in file_handle.readlines()]
