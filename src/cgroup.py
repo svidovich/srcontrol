@@ -26,7 +26,9 @@ CGROUP_BASE_DIR = '/sys/fs/cgroup'
 # cgroup.
 class Cgroup(object):
     def __init__(self, group_name, hierarchies):
-        self.hierarchies = hierarchies
+        # If a list is passed, fine. If not, it's likely a single string; make it a list.
+        self.hierarchies = hierarchies if isinstance(hierarchies,
+                                                     list) else [hierarchies]
         self.constructed_subgroups = []
         possible_hierarchies = common.load_hierarchies()
 
