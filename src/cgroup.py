@@ -95,8 +95,8 @@ class Cgroup(object):
     # Don't get excited yet. This is just the header. I need to figure out how I want to do
     # the retry logic before I flesh this out.
     def execute_auto_restarting_function_in_cgroup(self,
+                                                   function,
                                                    *args,
-                                                   function=None,
                                                    retries=0):
         # Retry is based on whether or not I detect that a process was killed due to an OOM error.
         # As such, I need to be able to detect OOM errors.

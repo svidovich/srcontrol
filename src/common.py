@@ -165,7 +165,6 @@ def load_group_files(group_name, dir=CGROUP_BASE_DIR):
         for (root, dirs, files) in os.walk(hierarchy_base_path):
             if group_name in dirs:
                 group_dir = os.path.join(root, group_name)
-                print(f'group_dir: {group_dir}')
                 files = [
                     f for f in os.listdir(group_dir)
                     if os.path.isfile(os.path.join(group_dir, f))
